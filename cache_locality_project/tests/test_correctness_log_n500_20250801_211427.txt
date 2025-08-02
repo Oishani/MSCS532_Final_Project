@@ -1,0 +1,21 @@
+Test Correctness Log - 2025-08-01 21:14:27
+Matrix size: 500x500
+
+Reference (list row-wise) sum:
+  125103.025218059949
+
+All computed sums:
+  list_row: 125103.025218059949 (diff +0.00e+00)
+  list_col: 125103.025218059527 (diff -4.22e-10)
+  numpy_py_C_row: 125103.025218059949 (diff +0.00e+00)
+  numpy_py_C_col: 125103.025218059527 (diff -4.22e-10)
+  numpy_py_F_row: 125103.025218059949 (diff +0.00e+00)
+  numpy_py_F_col: 125103.025218059527 (diff -4.22e-10)
+  numpy_numba_C_row: 125103.025218059949 (diff +0.00e+00)
+  numpy_numba_C_col: 125103.025218059527 (diff -4.22e-10)
+  numpy_numba_F_row: 125103.025218059949 (diff +0.00e+00)
+  numpy_numba_F_col: 125103.025218059527 (diff -4.22e-10)
+  vectorized_C: 125103.025218060910 (diff +9.60e-10)
+  vectorized_F: 125103.025218060910 (diff +9.60e-10)
+
+RESULT: PASS - all sums match within tolerance.

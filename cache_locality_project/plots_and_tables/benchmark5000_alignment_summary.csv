@@ -1,0 +1,8 @@
+alignment,method,mean
+aligned,numpy_manual_numba,0.02393383319999738
+aligned,numpy_manual_py,2.392581850583334
+aligned,python_list,0.41845986133333285
+misaligned,numpy_manual_numba,0.07091571270000041
+misaligned,numpy_manual_py,2.4216520694999994
+misaligned,python_list,3.0677857014999996
+vectorized,numpy_vectorized,0.0048309445833325
