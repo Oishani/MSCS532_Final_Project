@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cache Locality Optimization Presentation</title>
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow: hidden;
+        }
+
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            padding: 60px;
+            display: none;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide h1 {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+        }
+
+        .slide h2 {
+            font-size: 2em;
+            color: #34495e;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .slide h3 {
+            font-size: 1.5em;
+            color: #2980b9;
+            margin-bottom: 15px;
+        }
+
+        .slide p, .slide li {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .slide ul {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        .slide li {
+            margin-bottom: 10px;
+        }
+
+        .title-slide {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .title-slide h1 {
+            font-size: 3em;
+            border: none;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .title-slide .subtitle {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .title-slide .details {
+            font-size: 1.1em;
+            opacity: 0.8;
+            line-height: 1.8;
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .nav-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6);
+        }
+
+        .nav-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .slide-counter {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1em;
+            z-index: 1000;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .highlight-black {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: black;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+
+        .performance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            font-size: 0.9em;
+        }
+
+        .performance-table th,
+        .performance-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .performance-table th {
+            background: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+
+        .performance-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .feature-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .feature-box h4 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+
+        .speaker-notes {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            line-height: 1.4;
+            display: none;
+            z-index: 999;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .speaker-notes.visible {
+            display: block;
+        }
+
+        .notes-toggle {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9em;
+            z-index: 1001;
+        }
+
+        .notes-toggle:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+<body>
+<div class="presentation-container">
+<div class="slide-counter">
+<span id="current-slide">1</span> / <span id="total-slides">10</span>
+</div>
+<button class="notes-toggle" onclick="toggleNotes()">Toggle Speaker Notes</button>
+<div class="speaker-notes" id="speaker-notes">
+            Speaker notes will appear here when toggled.
+        </div>
+<div class="slide active title-slide">
+<h1>Cache Locality Optimization in HPC</h1>
+<div class="subtitle">Quantifying Memory Layout Effects Through Python Prototyping</div>
+<div class="details">
+<p><strong>Oishani Ganguly</strong></p>
+<p>University of the Cumberlands</p>
+<p>MSCS-532-M20 - Algorithms and Data Structures</p>
+<p>Professor Brandon Bass</p>
+<p>August 22, 2025</p>
+</div>
+</div>
+<div class="slide" data-notes="The foundation of our research comes from a comprehensive empirical study by Azad and colleagues, who analyzed thousands of performance-related code commits in high-performance computing applications. What they discovered was shocking - nearly 40% of all performance problems could be traced back to poor data structure and algorithm choices. This isn't just academic theory - this is real-world evidence from production HPC systems. The core issue is what computer scientists call the 'memory wall' - while CPU speeds have increased exponentially following Moore's Law, memory access speeds have improved much more slowly. The result is a widening performance gap where modern processors can execute hundreds of instructions in the time it takes to fetch a single piece of data from main memory. When applications use data structures that don't align with how the hardware cache system works, they end up with frequent cache misses, essentially forcing the processor to wait idle while expensive memory fetches complete. This creates a cascade effect - poor cache utilization leads to memory bandwidth bottlenecks, which in turn makes parallel processing less effective, ultimately degrading overall system performance.">
+<h2>The Performance Crisis in High-Performance Computing</h2>
+<div class="feature-box">
+<h4>📊 The Empirical Reality</h4>
+<p>Recent study by Azad et al. (2023): <span class="highlight-black">39.3% of HPC performance bugs</span> stem from inefficient data structure and algorithm implementation</p>
+</div>
+<div class="two-column">
+<div>
+<h3>💾 The Memory Wall Problem</h3>
+<ul>
+<li>CPU speeds have grown exponentially</li>
+<li>Memory access times have improved slowly</li>
+<li>Result: <span class="highlight">Processors wait for data</span></li>
+<li>Cache misses can be 100x slower than hits</li>
+</ul>
+</div>
+<div>
+<div class="feature-box">
+<h4>🎯 Impact on Applications</h4>
+<p>Poor data structure choices lead to:</p>
+<ul>
+<li>Frequent cache misses</li>
+<li>Memory bandwidth bottlenecks</li>
+<li>Reduced parallelization efficiency</li>
+<li>Overall performance degradation</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="slide" data-notes="To understand why cache locality matters so much, we need to dive into how modern computer memory systems actually work. Think of cache memory as a series of increasingly larger but slower storage areas - it's like having your most frequently used tools on your desk, less common ones in your desk drawer, and rarely used items in a storage closet across the building. L1 cache is tiny but lightning fast - typically 32 to 64 kilobytes that the processor can access in just one clock cycle. L2 cache is larger at 256KB to 1MB but takes about 10 cycles to access. L3 cache can be 8 to 32 megabytes but requires around 40 cycles. Main memory is huge - gigabytes of capacity - but requires roughly 300 clock cycles to access. The key insight is that when the processor requests data, it doesn't just get that one piece - it loads an entire 'cache line' of 64 bytes, hoping that nearby data will also be needed soon. This is spatial locality - the principle that if you access one memory location, you're likely to access nearby locations as well. Temporal locality means recently accessed data is likely to be accessed again soon. Cache-aware data structures exploit these principles by organizing information so that related data is physically close in memory, maximizing the probability that when the processor loads one element, the next several elements it needs are already in the fast cache.">
+<h2>Understanding Cache Locality: The Foundation of Speed</h2>
+<div class="two-column">
+<div>
+<h3>🏗️ Memory Hierarchy</h3>
+<div class="feature-box">
+<h4>Cache Levels (Fast → Slow)</h4>
+<ul>
+<li><strong>L1 Cache:</strong> ~1 cycle, 32-64KB</li>
+<li><strong>L2 Cache:</strong> ~10 cycles, 256KB-1MB</li>
+<li><strong>L3 Cache:</strong> ~40 cycles, 8-32MB</li>
+<li><strong>Main Memory:</strong> ~300 cycles, GBs</li>
+</ul>
+</div>
+</div>
+<div>
+<h3>📍 Locality Principles</h3>
+<div class="feature-box">
+<h4>💡 Spatial Locality</h4>
+<p>Data near recently accessed locations is likely to be accessed soon</p>
+</div>
+<div class="feature-box">
+<h4>⏰ Temporal Locality</h4>
+<p>Recently accessed data is likely to be accessed again</p>
+</div>
+</div>
+</div>
+<h3>🎯 The Optimization Goal</h3>
+<p><span class="highlight">Arrange data to maximize cache hits and minimize expensive memory fetches</span></p>
+</div>
+<div class="slide" data-notes="Our experimental approach was designed to isolate and quantify cache locality effects in a controlled, reproducible manner. The key insight is that cache performance depends on the interaction between two factors: how data is laid out in memory, and how your algorithm accesses that data. We created a systematic experiment using Python and NumPy to test different combinations. Python's list-of-lists serves as our worst-case baseline - it's essentially a collection of pointers scattered throughout memory with no guarantee of locality. NumPy arrays, by contrast, store elements in contiguous blocks, but NumPy gives us two ordering options: C-contiguous arrays store data row-by-row, like reading a book left-to-right, top-to-bottom. Fortran-contiguous arrays store data column-by-column, like reading a newspaper column from top-to-bottom, then moving to the next column. The critical insight is that an array's performance depends not just on whether it's contiguous, but whether your access pattern matches the memory layout. A C-contiguous array accessed row-wise is 'aligned' - you're following the natural memory order. But that same array accessed column-wise is 'misaligned' - you're jumping around in memory. We used Numba's just-in-time compilation to reduce Python interpreter overhead and reveal the true locality effects that would otherwise be masked by language-level inefficiencies.">
+<h2>Implementation Strategy: Controlled Cache Experiments</h2>
+<div class="feature-box">
+<h4>🔬 Experimental Design</h4>
+<p>Isolate cache locality effects through <span class="highlight-black">orthogonal combinations</span> of memory layout and access patterns</p>
+</div>
+<div class="two-column">
+<div>
+<h3>📊 Data Structures Compared</h3>
+<ul>
+<li><strong>Python list-of-lists:</strong> Non-contiguous baseline</li>
+<li><strong>NumPy C-contiguous:</strong> Row-major ordering</li>
+<li><strong>NumPy F-contiguous:</strong> Column-major ordering</li>
+</ul>
+<h3>🔄 Access Patterns</h3>
+<ul>
+<li><strong>Row-wise traversal:</strong> i, then j</li>
+<li><strong>Column-wise traversal:</strong> j, then i</li>
+</ul>
+</div>
+<div>
+<div class="code-block">
+<pre><code># Shared base for fair comparison
+base = np.random.random((n, n))
+arr_c = np.ascontiguousarray(base)
+arr_f = np.asfortranarray(base)
+
+# Row-wise: aligned with C-layout
+for i in range(n):
+    for j in range(m):
+        s += arr[i, j]
+
+# Column-wise: aligned with F-layout
+for j in range(m):
+    for i in range(n):
+        s += arr[i, j]</code></pre>
+                    </div>
+</div>
+</div>
+</div>
+<div class="slide" data-notes="The performance results provide dramatic validation of cache locality theory - and reveal some surprising nuances. Looking at our JIT-compiled results, aligned access patterns where traversal order matches memory layout achieve 128x speedup compared to the worst-case Python list with column-wise access. But here's the key insight: misaligned patterns - where you have contiguous memory but access it in the wrong order - only achieve 42 to 44x speedup. That means proper alignment gives you roughly 3x better performance than just having contiguous memory alone. This demolishes the oversimplified advice that 'contiguous arrays are always better' - alignment matters more than just contiguity. The pure Python results tell another important story: without JIT compilation, manual loops show almost no difference between aligned and misaligned cases, achieving only 1.26 to 1.28x speedup. This demonstrates how high-level language overhead can completely mask the underlying hardware effects we're trying to optimize for. The vectorized NumPy operations represent the gold standard, achieving 627 to 643x speedup by combining optimal memory layout with highly optimized internal algorithms that use SIMD instructions and sophisticated prefetching strategies. These results show there's a performance hierarchy: vectorized operations are best, followed by aligned manual loops, then misaligned manual loops, with the interpreter-bound cases bringing up the rear.">
+<h2>Dramatic Performance Validation: The Numbers Don't Lie</h2>
+<div class="feature-box">
+<h4>🚀 Key Finding</h4>
+<p>Proper alignment of access patterns with memory layout yields <span class="highlight-black">3x performance improvement</span> over misaligned access</p>
+</div>
+<table class="performance-table">
+<tr>
+<th>Method</th>
+<th>Layout</th>
+<th>Access Pattern</th>
+<th>Alignment</th>
+<th>Speedup vs Worst Case</th>
+</tr>
+<tr style="background: #e8f5e8;">
+<td>Numba JIT</td>
+<td>C</td>
+<td>Row-wise</td>
+<td>✅ Aligned</td>
+<td><strong>128.6x</strong></td>
+</tr>
+<tr style="background: #e8f5e8;">
+<td>Numba JIT</td>
+<td>Fortran</td>
+<td>Column-wise</td>
+<td>✅ Aligned</td>
+<td><strong>127.8x</strong></td>
+</tr>
+<tr style="background: #ffe8e8;">
+<td>Numba JIT</td>
+<td>C</td>
+<td>Column-wise</td>
+<td>❌ Misaligned</td>
+<td>42.5x</td>
+</tr>
+<tr style="background: #ffe8e8;">
+<td>Numba JIT</td>
+<td>Fortran</td>
+<td>Row-wise</td>
+<td>❌ Misaligned</td>
+<td>44.1x</td>
+</tr>
+<tr style="background: #e8e8ff;">
+<td>NumPy Vectorized</td>
+<td>C/Fortran</td>
+<td>Optimized</td>
+<td>🎯 Perfect</td>
+<td><strong>627-643x</strong></td>
+</tr>
+</table>
+</div>
+<div class="slide" data-notes="This research bridges the gap between theoretical computer science and practical software engineering, revealing several critical insights that every performance-conscious developer should understand. First, the common wisdom that 'contiguous data structures are faster' is dangerously incomplete. What really matters is the two-dimensional relationship between memory layout and access patterns. You can have a perfectly contiguous array but still get terrible performance if you access it in the wrong order. Second, high-level programming languages can be both friend and foe when it comes to optimization. Python's ease of use makes it perfect for rapid prototyping and scientific computing, but its interpreter overhead can completely mask the cache effects we're trying to optimize for. This means you need sophisticated measurement techniques and careful experimental design to see the true hardware-level performance characteristics. The practical applications extend far beyond academic exercises - these principles are crucial for scientific computing with NumPy and SciPy, machine learning frameworks like TensorFlow and PyTorch that manipulate large tensors, image and signal processing pipelines that work with multi-dimensional arrays, and even database systems that need to efficiently scan through large datasets. The key is developing a systematic engineering approach: consciously choose data structures based on expected access patterns, validate that your optimizations actually work through careful benchmarking, and always remember that the interaction between software and hardware is what determines real-world performance. Future work in this area includes extending these techniques to GPU memory hierarchies, developing cache-aware algorithms for multi-threaded applications, and building advanced spatial data structures for geographic and scientific applications.">
+<h2>Lessons Learned: From Theory to Production Practice</h2>
+<div class="two-column">
+<div>
+<div class="feature-box">
+<h4>💡 Theory Refinements</h4>
+<ul>
+<li><strong>Beyond "contiguous is better":</strong> <span class="highlight-black">Match access patterns to memory layout</span></li>
+<li><strong>Two-dimensional optimization:</strong> Both layout AND traversal matter</li>
+<li><strong>Language overhead masking:</strong> High-level languages can hide locality benefits</li>
+</ul>
+</div>
+<div class="feature-box">
+<h4>🔧 Practical Applications</h4>
+<ul>
+<li>Scientific computing with NumPy/SciPy</li>
+<li>Machine learning tensor operations</li>
+<li>Image/signal processing pipelines</li>
+<li>Database query optimization</li>
+</ul>
+</div>
+</div>
+<div>
+<div class="feature-box">
+<h4>📋 Implementation Checklist</h4>
+<ol>
+<li><strong>Reason explicitly</strong> about data layout</li>
+<li><strong>Couple layout</strong> with expected access patterns</li>
+<li><strong>Validate functional equivalence</strong> across optimizations</li>
+<li><strong>Account for language overhead</strong> in measurements</li>
+<li><strong>Benchmark systematically</strong> with multiple trials</li>
+</ol>
+</div>
+<div class="feature-box">
+<h4>🎯 Future Extensions</h4>
+<ul>
+<li>GPU memory hierarchy optimization</li>
+<li>Multi-threaded cache-aware algorithms</li>
+<li>Advanced spatial data structures</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="slide" data-notes="This slide highlights both the strengths and limitations of cache-aware optimization techniques. On the strengths side, we see benefits like reduced latency, improved scalability in parallel systems, and greater potential for compiler-level performance enhancements. However, cache-aware designs can be inflexible for workloads involving frequent insertions or dynamic memory changes. Also, pre-allocating memory increases overhead, and performance gains are highly tied to access patterns. So while powerful, these techniques must be applied judiciously."><h2>Trade-Offs in Cache Optimization</h2>
+<div class="two-column">
+<div>
+<div class="feature-box">
+<h4>Strengths</h4>
+<ul>
+<li>🚀 Reduced memory latency</li>
+<li>🧠 Improved parallelization via reduced false sharing</li>
+<li>🧰 Simplicity and portability across platforms</li>
+<li>📦 Basis for advanced compiler optimizations</li>
+</ul>
+</div>
+</div>
+<div>
+<div class="feature-box">
+<h4>Limitations</h4>
+<ul>
+<li>🔁 Inefficient for dynamic operations</li>
+<li>📈 Increased memory overhead</li>
+<li>🔍 Highly access-pattern dependent</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="slide" data-notes="Here's a summarized table of empirical results showing relative speedups. Our baseline was a Python list-of-lists with column-wise access, which achieved the worst performance. Pure Python loops with NumPy only provided a marginal improvement. The real gains came with Numba JIT—when access was aligned with layout, we achieved over 128x speedup. Finally, the vectorized NumPy sum provided over 600x speedup. This validates the importance of both memory layout and matching access patterns."><h2>Empirical Speedup Ratios</h2>
+<table class="performance-table">
+<tr>
+<th>Method</th>
+<th>Layout</th>
+<th>Access Pattern</th>
+<th>Alignment</th>
+<th>Speedup</th>
+</tr>
+<tr><td>Python List</td><td>Row-major</td><td>Column-wise</td><td>❌</td><td>1.0x (Baseline)</td></tr>
+<tr><td>NumPy Manual (Py)</td><td>C</td><td>Row-wise</td><td>✅</td><td>1.28x</td></tr>
+<tr><td>NumPy Manual (Numba)</td><td>C</td><td>Row-wise</td><td>✅</td><td>128.6x</td></tr>
+<tr><td>NumPy Manual (Numba)</td><td>F</td><td>Column-wise</td><td>✅</td><td>127.8x</td></tr>
+<tr><td>NumPy Vectorized</td><td>C/F</td><td>Optimized</td><td>🎯</td><td>627–643x</td></tr>
+</table>
+</div><div class="slide" data-notes="Python, though high-level, can still benefit from low-level optimization techniques using tools like NumPy and Numba. This slide shows the basic setup: generate a shared base matrix, derive C and Fortran views, and define access patterns explicitly. Using Numba’s just-in-time compiler helps strip away Python’s overhead, exposing the true effects of cache alignment. The takeaway: even in Python, we can apply hardware-conscious design principles to achieve impressive performance."><h2>Applying the Optimization in Python</h2>
+<div class="two-column">
+<div>
+<h3>Key Tools</h3>
+<ul>
+<li><strong>NumPy:</strong> Cache-friendly contiguous arrays</li>
+<li><strong>Numba:</strong> JIT-accelerated loops</li>
+<li><strong>Warm-up:</strong> Excludes compilation overhead</li>
+</ul>
+<div class="feature-box">
+<h4>Best Practices</h4>
+<ol>
+<li>Use shared base matrix</li>
+<li>Explicitly define access pattern</li>
+<li>Vectorize where possible</li>
+</ol>
+</div>
+</div>
+<div>
+<div class="code-block">
+<pre><code>base = np.random.random((n, n))
+arr_c = np.ascontiguousarray(base)
+arr_f = np.asfortranarray(base)
+
+@njit
+def sum_rows(arr):
+    s = 0.0
+    for i in range(n):
+        for j in range(n):
+            s += arr[i, j]
+    return s
+</code></pre>
+</div>
+</div>
+</div>
+</div><div class="slide">
+<h2>References</h2>
+<div style="font-size: 1em; line-height: 1.8; text-align: left;">
+<p><strong>Azad, M. A. K., Iqbal, N., Hassan, F., &amp; Roy, P. (2023).</strong> An Empirical Study of High Performance Computing (HPC) Performance Bugs. <em>MSR23_HPC.pdf</em>.</p>
+<p><strong>Balasubramonian, R., Albonesi, D., Buyuktosunoglu, A., &amp; Dwarkadas, S. (2000).</strong> Dynamic Memory Hierarchy Performance Optimization. <em>Department of Computer Science &amp; Department of Electrical and Computer Engineering, University of Rochester</em>.</p>
+<p><strong>Chu, G., Harwood, A., Stuckey, P. J. (2008).</strong> Cache Conscious Data Structures For Boolean Satisfiability Solvers. <em>NICTA Victoria Laboratory &amp; Department of Computer Science and Software Engineering, University of Melbourne</em>.</p>
+<p><strong>Frigo, M., Leiserson, C., Prokop, H., &amp; Ramachandran, S. (2003).</strong> Cache-oblivious Algorithms. <em>40th Annual Symposium on Foundations of Computer Science</em>, 285–297.</p>
+<p><strong>Stack Overflow. (2016).</strong> Performance Between C-contiguous And Fortran-contiguous Array Operations. Retrieved from <a href="https://stackoverflow.com/questions/39054539/" target="_blank">https://stackoverflow.com/questions/39054539/</a></p>
+<p><strong>Turner-Trauring, I. (2023).</strong> Speeding Up Cython With SIMD. <em>Python⇒Speed</em>.</p>
+</div>
+<div style="text-align: center; margin-top: 40px;">
+<h1 style="color: #3498db; font-size: 2.5em;">Thank You!</h1>
+<p style="font-size: 1.2em; margin-top: 20px;">Questions?</p>
+</div>
+</div>
+<div class="navigation">
+<button class="nav-btn" id="prev-btn" onclick="previousSlide()">← Previous</button>
+<button class="nav-btn" id="next-btn" onclick="nextSlide()">Next →</button>
+</div>
+</div>
+<script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        document.getElementById('total-slides').textContent = totalSlides;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            
+            document.getElementById('current-slide').textContent = currentSlide + 1;
+            
+            document.getElementById('prev-btn').disabled = currentSlide === 0;
+            document.getElementById('next-btn').disabled = currentSlide === totalSlides - 1;
+            
+            // Update speaker notes
+            const notes = slides[currentSlide].getAttribute('data-notes');
+            const notesElement = document.getElementById('speaker-notes');
+            if (notes) {
+                notesElement.textContent = notes;
+            } else {
+                notesElement.textContent = 'No speaker notes for this slide.';
+                // Hide notes for slides without them
+                notesElement.classList.remove('visible');
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function previousSlide() {
+            if (currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function toggleNotes() {
+            const notes = document.getElementById('speaker-notes');
+            notes.classList.toggle('visible');
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                previousSlide();
+            } else if (e.key === 'n' || e.key === 'N') {
+                e.preventDefault();
+                toggleNotes();
+            }
+        });
+
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>
